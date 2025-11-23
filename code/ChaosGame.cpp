@@ -6,11 +6,13 @@
 // Include important C++ libraries here
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
+#include <SFML/Window.hpp>
 #include <iostream>
 #include <sstream>
 #include <vector>
 #include <cstdlib>
 #include <ctime>
+#include <optional>
 
 //Make the code easier to type with "using namespace"
 using namespace sf;
@@ -20,13 +22,32 @@ enum GameMode
 {
 	MODE_MENU,
 	MODE_TRIANGLE,
-	MODE_SQUARE
+	MODE_SQUARE,
+	MODE_PENTAGON,
+	MODE_HEXAGON
 };
+
+float getRatio(int vertexCount)
+{
+	if (vertexCount == 3) return 0.5f;
+	if (vertexCount == 4) return 0.5f;
+	if (vertexCount == 5)
+	{
+		const float phi = 1.6180339887f;
+		return 1.0f / phi;
+	}
+	if (vertexCount == 6) return 2.0f / 3.0f;
+	if (vertexCount == 7) return 0.692f;
+	if (vertexCount == 8) return 0.707f;
+	if (vertexCount == 9) return 0.742f;
+	if (vertexCount == 10) return 0.764f;
+	return 0.5f;
+}
 
 int main()
 {
 	// Create a video mode object
-	VideoMode vm(1920, 1080);
+	VideoMode vm(Vector2u(1920, 1080));
 	// Create and open a window for the game
 	RenderWindow window(vm, "Chaos Game!!", Style::Default);
 
@@ -38,17 +59,16 @@ int main()
 	int lastVertex = -1;
 
 	Font font;
-	if (!font.loadFromFile("arial.ttf"))
+	if (!font.openFromFile("arial.ttf"))
 	{
 		cout << "Error loading font" << endl;
 	}
 
-	Text instructions;
-	instructions.setFont(font);
+	Text instructions(font);
 	instructions.setCharacterSize(24);
 	instructions.setFillColor(Color::White);
-	instructions.setPosition(10.f, 10.f);
-	instructions.setString("Click T for triangle, S for square");
+	instructions.setPosition(Vector2f(10.f, 10.f));
+	instructions.setString("T: triangle, S: square, P: pentagon, H: hexagon\nPress R to reset, ESC to quit");
 
 	srand(static_cast<unsigned>(time(nullptr)));
 
@@ -59,24 +79,32 @@ int main()
 		Handle the players input
 		****************************************
 		*/
-		Event event;
-		while (window.pollEvent(event))
+		while (auto event = window.pollEvent())
 		{
-			if (event.type == Event::Closed)
+			if (event->is<Event::Closed>())
 			{
 				// Quit the game when the window is closed
 				window.close();
 			}
-			if (event.type == Event::KeyPressed)
+			if (auto* keyPressed = event->getIf<Event::KeyPressed>())
 			{
-				if (event.key.code == Keyboard::Escape)
+				if (keyPressed->code == Keyboard::Key::Escape)
 				{
 					window.close();
 				}
 
+				if (keyPressed->code == Keyboard::Key::R)
+				{
+					mode = MODE_MENU;
+					vertexCount = 0;
+					vertices.clear();
+					points.clear();
+					lastVertex = -1;
+				}
+
 				if (mode == MODE_MENU)
 				{
-					if (event.key.code == Keyboard::T)
+					if (keyPressed->code == Keyboard::Key::T)
 					{
 						mode = MODE_TRIANGLE;
 						vertexCount = 3;
@@ -84,7 +112,7 @@ int main()
 						points.clear();
 						lastVertex = -1;
 					}
-					else if (event.key.code == Keyboard::S)
+					else if (keyPressed->code == Keyboard::Key::S)
 					{
 						mode = MODE_SQUARE;
 						vertexCount = 4;
@@ -92,20 +120,37 @@ int main()
 						points.clear();
 						lastVertex = -1;
 					}
+					else if (keyPressed->code == Keyboard::Key::P)
+					{
+						mode = MODE_PENTAGON;
+						vertexCount = 5;
+						vertices.clear();
+						points.clear();
+						lastVertex = -1;
+					}
+					else if (keyPressed->code == Keyboard::Key::H)
+					{
+						mode = MODE_HEXAGON;
+						vertexCount = 6;
+						vertices.clear();
+						points.clear();
+						lastVertex = -1;
+					}
 				}
 			}
-			if (event.type == sf::Event::MouseButtonPressed)
+			if (auto* mousePressed = event->getIf<Event::MouseButtonPressed>())
 			{
-				if (event.mouseButton.button == sf::Mouse::Left)
+				if (mousePressed->button == Mouse::Button::Left)
 				{
+					Vector2i mousePos = mousePressed->position;
 					std::cout << "the left button was pressed" << std::endl;
-					std::cout << "mouse x: " << event.mouseButton.x << std::endl;
-					std::cout << "mouse y: " << event.mouseButton.y << std::endl;
+					std::cout << "mouse x: " << mousePos.x << std::endl;
+					std::cout << "mouse y: " << mousePos.y << std::endl;
 
-					if (mode == MODE_TRIANGLE || mode == MODE_SQUARE)
+					if (mode == MODE_TRIANGLE || mode == MODE_SQUARE || mode == MODE_PENTAGON || mode == MODE_HEXAGON)
 					{
-						float mx = static_cast<float>(event.mouseButton.x);
-						float my = static_cast<float>(event.mouseButton.y);
+						float mx = static_cast<float>(mousePos.x);
+						float my = static_cast<float>(mousePos.y);
 
 						if (static_cast<int>(vertices.size()) < vertexCount)
 						{
@@ -122,8 +167,10 @@ int main()
 
 
 
-		if (points.size() > 0 && static_cast<int>(vertices.size()) == vertexCount)
+		if (points.size() > 0 && static_cast<int>(vertices.size()) == vertexCount && vertexCount > 0)
 		{
+			float r = getRatio(vertexCount);
+
 			for (int i = 0 ; i < 200; ++i)
 			{
 				Vector2f current = points.back();
@@ -141,8 +188,8 @@ int main()
 				Vector2f v = vertices[index];
 
 				Vector2f newPoint(
-					(current.x + v.x) / 2.f,
-					(current.y + v.y) / 2.f
+					current.x + r * (v.x - current.x),
+					current.y + r * (v.y - current.y)
 				);
 
 				points.push_back(newPoint);
@@ -158,24 +205,28 @@ int main()
 
 		if (mode == MODE_MENU)
 		{
-			instructions.setString("Click T for triangle, S for square\nClick ESC to quit");
+			instructions.setString("T: triangle, S: square, P: pentagon, H: hexagon\nPress R to reset, ESC to quit");
 		}
 		else
 		{
 			if (static_cast<int>(vertices.size()) < vertexCount)
 			{
 				if (mode == MODE_TRIANGLE)
-					instructions.setString("Triangle mode\nClick 3 vertices");
-				else
-					instructions.setString("Square mode\nClick 4 vertices");
+					instructions.setString("Triangle mode\nClick 3 vertices\nPress R to reset, ESC to quit");
+				else if (mode == MODE_SQUARE)
+					instructions.setString("Square mode\nClick 4 vertices\nPress R to reset, ESC to quit");
+				else if (mode == MODE_PENTAGON)
+					instructions.setString("Pentagon mode\nClick 5 vertices\nPress R to reset, ESC to quit");
+				else if (mode == MODE_HEXAGON)
+					instructions.setString("Hexagon mode\nClick 6 vertices\nPress R to reset, ESC to quit");
 			}
 			else if (static_cast<int>(vertices.size()) == vertexCount && points.size() == 0)
 			{
-				instructions.setString("Click a final point to start the chaos game");
+				instructions.setString("Click a final point to start the chaos game\nPress R to reset, ESC to quit");
 			}
 			else
 			{
-				instructions.setString("Chaos game running... Press ESC to quit");
+				instructions.setString("Chaos game running... Press R to reset, ESC to quit");
 			}
 		}
 
@@ -198,7 +249,7 @@ int main()
 		for (int i = 0; i < static_cast<int>(points.size()); i++)
 		{
 			RectangleShape pointShape(Vector2f(2.f, 2.f));
-			pointShape.setPosition(points[i].x, points[i].y);
+			pointShape.setPosition(Vector2f(points[i].x, points[i].y));
 			pointShape.setFillColor(Color::Green);
 			window.draw(pointShape);
 		}
