@@ -63,9 +63,10 @@ int main()
 		cout << "Error loading font" << endl;
 	}
 
-	Text instructions(font);
+	Text instructions;
+	instructions.setFont(font);
 	instructions.setCharacterSize(24);
-	instructions.setColor(Color::White);
+	instructions.setFillColor(Color::White);
 	instructions.setPosition(Vector2f(10.f, 10.f));
 	instructions.setString("T: triangle, S: square, P: pentagon, H: hexagon\nPress R to reset, ESC to quit");
 
@@ -241,7 +242,7 @@ int main()
 		{
 			RectangleShape rect(Vector2f(10.f, 10.f));
 			rect.setPosition(Vector2f(vertices[i].x - 5.f, vertices[i].y - 5.f));
-			rect.setColor(Color::Blue);
+			rect.setFillColor(Color::Blue);
 			window.draw(rect);
 		}
 
@@ -249,7 +250,7 @@ int main()
 		{
 			RectangleShape pointShape(Vector2f(2.f, 2.f));
 			pointShape.setPosition(Vector2f(points[i].x, points[i].y));
-			pointShape.setColor(Color::Green);
+			pointShape.setFillColor(Color::Green);
 			window.draw(pointShape);
 		}
 
