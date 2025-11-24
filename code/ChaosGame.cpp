@@ -12,7 +12,6 @@
 #include <vector>
 #include <cstdlib>
 #include <ctime>
-#include <optional>
 
 //Make the code easier to type with "using namespace"
 using namespace sf;
@@ -47,7 +46,7 @@ float getRatio(int vertexCount)
 int main()
 {
 	// Create a video mode object
-	VideoMode vm(Vector2u(1920, 1080));
+	VideoMode vm(1920, 1080);
 	// Create and open a window for the game
 	RenderWindow window(vm, "Chaos Game!!", Style::Default);
 
@@ -59,14 +58,14 @@ int main()
 	int lastVertex = -1;
 
 	Font font;
-	if (!font.openFromFile("arial.ttf"))
+	if (!font.loadFromFile("arial.ttf"))
 	{
 		cout << "Error loading font" << endl;
 	}
 
 	Text instructions(font);
 	instructions.setCharacterSize(24);
-	instructions.setFillColor(Color::White);
+	instructions.setColor(Color::White);
 	instructions.setPosition(Vector2f(10.f, 10.f));
 	instructions.setString("T: triangle, S: square, P: pentagon, H: hexagon\nPress R to reset, ESC to quit");
 
@@ -79,21 +78,21 @@ int main()
 		Handle the players input
 		****************************************
 		*/
-		while (auto event = window.pollEvent())
+		Event event;
+		while (window.pollEvent(event))
 		{
-			if (event->is<Event::Closed>())
+			if (event.type == Event::Closed)
 			{
-				// Quit the game when the window is closed
 				window.close();
 			}
-			if (auto* keyPressed = event->getIf<Event::KeyPressed>())
+			if (event.type == Event::KeyPressed)
 			{
-				if (keyPressed->code == Keyboard::Key::Escape)
+				if (event.key.code == Keyboard::Escape)
 				{
 					window.close();
 				}
 
-				if (keyPressed->code == Keyboard::Key::R)
+				if (event.key.code == Keyboard::R)
 				{
 					mode = MODE_MENU;
 					vertexCount = 0;
@@ -104,7 +103,7 @@ int main()
 
 				if (mode == MODE_MENU)
 				{
-					if (keyPressed->code == Keyboard::Key::T)
+					if (event.key.code == Keyboard::T)
 					{
 						mode = MODE_TRIANGLE;
 						vertexCount = 3;
@@ -112,7 +111,7 @@ int main()
 						points.clear();
 						lastVertex = -1;
 					}
-					else if (keyPressed->code == Keyboard::Key::S)
+					else if (event.key.code == Keyboard::S)
 					{
 						mode = MODE_SQUARE;
 						vertexCount = 4;
@@ -120,7 +119,7 @@ int main()
 						points.clear();
 						lastVertex = -1;
 					}
-					else if (keyPressed->code == Keyboard::Key::P)
+					else if (event.key.code == Keyboard::P)
 					{
 						mode = MODE_PENTAGON;
 						vertexCount = 5;
@@ -128,7 +127,7 @@ int main()
 						points.clear();
 						lastVertex = -1;
 					}
-					else if (keyPressed->code == Keyboard::Key::H)
+					else if (event.key.code == Keyboard::H)
 					{
 						mode = MODE_HEXAGON;
 						vertexCount = 6;
@@ -138,11 +137,11 @@ int main()
 					}
 				}
 			}
-			if (auto* mousePressed = event->getIf<Event::MouseButtonPressed>())
+			if (event.type == Event::MouseButtonPressed)
 			{
-				if (mousePressed->button == Mouse::Button::Left)
+				if (event.mouseButton.button == Mouse::Left)
 				{
-					Vector2i mousePos = mousePressed->position;
+					Vector2i mousePos(event.mouseButton.x, event.mouseButton.y);
 					std::cout << "the left button was pressed" << std::endl;
 					std::cout << "mouse x: " << mousePos.x << std::endl;
 					std::cout << "mouse y: " << mousePos.y << std::endl;
@@ -242,7 +241,7 @@ int main()
 		{
 			RectangleShape rect(Vector2f(10.f, 10.f));
 			rect.setPosition(Vector2f(vertices[i].x - 5.f, vertices[i].y - 5.f));
-			rect.setFillColor(Color::Blue);
+			rect.setColor(Color::Blue);
 			window.draw(rect);
 		}
 
@@ -250,7 +249,7 @@ int main()
 		{
 			RectangleShape pointShape(Vector2f(2.f, 2.f));
 			pointShape.setPosition(Vector2f(points[i].x, points[i].y));
-			pointShape.setFillColor(Color::Green);
+			pointShape.setColor(Color::Green);
 			window.draw(pointShape);
 		}
 
